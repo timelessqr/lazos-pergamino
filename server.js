@@ -14,6 +14,10 @@ validateEnvironment();
 
 const app = express();
 
+// Render pone un proxy delante: sin esto req.ip es la del proxy y el rate
+// limiter cuenta a todos los visitantes como si fueran uno solo
+app.set('trust proxy', 1);
+
 // Conectar a la base de datos (sin crashear si falla en desarrollo)
 connectDB().catch(() => {
   console.log('⚠️  Servidor iniciado sin BD. Conéctate después.');
