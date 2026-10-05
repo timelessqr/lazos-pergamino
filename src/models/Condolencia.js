@@ -22,6 +22,13 @@ const condolenciaSchema = new mongoose.Schema({
     required: [true, 'El pergamino es requerido']
   },
 
+  // Servicio del pergamino al que pertenece el mensaje (Pergamino.servicioActual)
+  servicio: {
+    type: Number,
+    required: [true, 'El servicio es requerido'],
+    min: 1
+  },
+
   // Snapshot del difunto al momento del mensaje: el pergamino es editable
   // y se sobrescribe, asi el mensaje conserva a quien iba dirigido
   difuntoSnapshot: {
@@ -77,7 +84,7 @@ const condolenciaSchema = new mongoose.Schema({
 });
 
 // Indices
-condolenciaSchema.index({ salaId: 1, createdAt: -1 });
+condolenciaSchema.index({ salaId: 1, servicio: 1, createdAt: -1 });
 condolenciaSchema.index({ funerariaId: 1, createdAt: -1 });
 condolenciaSchema.index({ pergaminoId: 1 });
 condolenciaSchema.index({ estado: 1 });
@@ -96,9 +103,9 @@ condolenciaSchema.methods.rechazar = function() {
   return this.save();
 };
 
-// Mensajes visibles al publico de una sala
-condolenciaSchema.statics.publicasDeSala = function(salaId) {
-  return this.find({ salaId, estado: CONDOLENCIA_STATUS.APROBADA }).sort({ createdAt: -1 });
+// Mensajes visibles al publico de un servicio de la sala
+condolenciaSchema.statics.publicasDeSala = function(salaId, servicio) {
+  return this.find({ salaId, servicio, estado: CONDOLENCIA_STATUS.APROBADA }).sort({ createdAt: -1 });
 };
 
 module.exports = mongoose.model('Condolencia', condolenciaSchema);

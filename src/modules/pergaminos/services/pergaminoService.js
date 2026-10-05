@@ -181,6 +181,10 @@ class PergaminoService {
     try {
       const pergamino = await pergaminoRepository.reiniciar(pergaminoId);
 
+      // Los mensajes del servicio anterior quedan guardados pero fuera del libro
+      const sala = await salaRepository.findById(pergamino.salaId);
+      await sala.reiniciarMensajes();
+
       return {
         pergamino: this.formatPergamino(pergamino),
         message: 'Pergamino reiniciado, la sala está lista para un nuevo servicio'

@@ -191,6 +191,14 @@ const pergaminoSchema = new mongoose.Schema({
   },
   fechaPublicacion: {
     type: Date
+  },
+
+  // Servicio en curso en la sala. Sube en cada reinicio: el documento es el
+  // mismo entre servicios, asi que el libro filtra los mensajes por este numero
+  servicioActual: {
+    type: Number,
+    default: 1,
+    min: 1
   }
 }, {
   timestamps: true,
@@ -258,6 +266,7 @@ pergaminoSchema.methods.reiniciar = function() {
   this.secciones = seccionesDefault();
   this.estado = PERGAMINO_STATUS.BORRADOR;
   this.fechaPublicacion = undefined;
+  this.servicioActual = (this.servicioActual || 1) + 1;
   return this.save();
 };
 

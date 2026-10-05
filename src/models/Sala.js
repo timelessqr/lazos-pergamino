@@ -90,6 +90,12 @@ salaSchema.methods.incrementarMensajes = function() {
   return this.save();
 };
 
+// Libro vacio para un nuevo servicio: el contador cuenta solo el servicio en curso
+salaSchema.methods.reiniciarMensajes = function() {
+  this.libroCondolencias.totalMensajes = 0;
+  return this.save();
+};
+
 // Validar el codigo de acceso al libro de condolencias
 salaSchema.methods.validarCodigoAcceso = function(codigo) {
   if (!this.libroCondolencias.requiereCodigo) return true;

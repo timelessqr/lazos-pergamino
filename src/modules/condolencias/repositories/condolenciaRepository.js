@@ -31,13 +31,13 @@ class CondolenciaRepository {
   }
 
   /**
-   * Listar las condolencias publicas (aprobadas) de una sala
+   * Listar las condolencias publicas (aprobadas) de un servicio de la sala
    */
-  async findPublicasBySala(salaId, options = {}) {
+  async findPublicasBySala(salaId, servicio, options = {}) {
     const { page = 1, limit = 20 } = options;
     const skip = (page - 1) * limit;
 
-    const query = { salaId, estado: CONDOLENCIA_STATUS.APROBADA };
+    const query = { salaId, servicio, estado: CONDOLENCIA_STATUS.APROBADA };
 
     const [condolencias, total] = await Promise.all([
       Condolencia.find(query)
@@ -61,13 +61,13 @@ class CondolenciaRepository {
   }
 
   /**
-   * Listar todas las condolencias de una sala (vista admin, incluye pendientes)
+   * Listar todas las condolencias de un servicio de la sala (vista admin, incluye pendientes)
    */
-  async findBySala(salaId, options = {}) {
+  async findBySala(salaId, servicio, options = {}) {
     const { page = 1, limit = 20, estado } = options;
     const skip = (page - 1) * limit;
 
-    const query = { salaId };
+    const query = { salaId, servicio };
     if (estado) query.estado = estado;
 
     const [condolencias, total] = await Promise.all([
@@ -87,13 +87,14 @@ class CondolenciaRepository {
   }
 
   /**
-   * Buscar condolencias por texto dentro de una sala
+   * Buscar condolencias por texto dentro de un servicio de la sala
    */
-  async search(salaId, termino, limit = 20) {
+  async search(salaId, servicio, termino, limit = 20) {
     const regex = new RegExp(termino, 'i');
 
     return await Condolencia.find({
       salaId,
+      servicio,
       $or: [{ nombre: regex }, { mensaje: regex }, { relacion: regex }]
     })
       .sort({ createdAt: -1 })
@@ -127,11 +128,11 @@ class CondolenciaRepository {
   }
 
   /**
-   * Estadisticas del libro de una sala
+   * Estadisticas del libro de un servicio de la sala
    */
-  async getStatsBySala(salaId) {
+  async getStatsBySala(salaId, servicio) {
     const result = await Condolencia.aggregate([
-      { $match: { salaId: new mongoose.Types.ObjectId(salaId) } },
+      { $match: { salaId: new mongoose.Types.ObjectId(salaId), servicio } },
       { $group: { _id: '$estado', count: { $sum: 1 } } }
     ]);
 

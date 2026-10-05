@@ -3,6 +3,7 @@
 // ===================================
 const salaRepository = require('../repositories/salaRepository');
 const condolenciaRepository = require('../../condolencias/repositories/condolenciaRepository');
+const pergaminoRepository = require('../../pergaminos/repositories/pergaminoRepository');
 const { codeGenerator } = require('../../../utils/codeGenerator');
 const { MESSAGES } = require('../../../utils/constants');
 
@@ -26,7 +27,11 @@ class SalaService {
   async getSalaById(salaId) {
     try {
       const sala = await salaRepository.findByIdComplete(salaId);
-      const statsCondolencias = await condolenciaRepository.getStatsBySala(salaId);
+      const pergamino = await pergaminoRepository.findBySala(salaId);
+      const statsCondolencias = await condolenciaRepository.getStatsBySala(
+        salaId,
+        pergamino.servicioActual || 1
+      );
 
       return {
         ...this.formatSala(sala),

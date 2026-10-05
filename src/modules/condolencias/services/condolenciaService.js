@@ -23,6 +23,14 @@ class CondolenciaService {
   }
 
   /**
+   * Servicio en curso de la sala: el libro muestra solo sus mensajes
+   */
+  async servicioActualDeSala(salaId) {
+    const pergamino = await pergaminoRepository.findBySala(salaId);
+    return pergamino.servicioActual || 1;
+  }
+
+  /**
    * PUBLICO: configuracion del libro de condolencias de la sala del QR
    */
   async getConfigPublica(code) {
@@ -95,6 +103,7 @@ class CondolenciaService {
         funerariaId: sala.funerariaId,
         salaId: sala._id,
         pergaminoId: pergamino._id,
+        servicio: pergamino.servicioActual || 1,
         difuntoSnapshot: {
           nombre: pergamino.difunto?.nombre,
           apellido: pergamino.difunto?.apellido
@@ -125,7 +134,8 @@ class CondolenciaService {
   async getCondolenciasPublicas(code, options = {}) {
     try {
       const sala = await this.resolverSalaPorCodigo(code);
-      const result = await condolenciaRepository.findPublicasBySala(sala._id, options);
+      const servicio = await this.servicioActualDeSala(sala._id);
+      const result = await condolenciaRepository.findPublicasBySala(sala._id, servicio, options);
 
       return {
         condolencias: result.condolencias.map(condolencia => this.formatPublica(condolencia)),
@@ -141,7 +151,8 @@ class CondolenciaService {
    */
   async getCondolenciasBySala(salaId, options = {}) {
     try {
-      const result = await condolenciaRepository.findBySala(salaId, options);
+      const servicio = await this.servicioActualDeSala(salaId);
+      const result = await condolenciaRepository.findBySala(salaId, servicio, options);
 
       return {
         condolencias: result.condolencias,
@@ -161,7 +172,8 @@ class CondolenciaService {
         throw new Error('El término de búsqueda es requerido');
       }
 
-      return await condolenciaRepository.search(salaId, termino, limit);
+      const servicio = await this.servicioActualDeSala(salaId);
+      return await condolenciaRepository.search(salaId, servicio, termino, limit);
     } catch (error) {
       throw new Error(`Error buscando condolencias: ${error.message}`);
     }
@@ -195,8 +207,10 @@ class CondolenciaService {
     try {
       const condolencia = await condolenciaRepository.delete(condolenciaId);
 
+      // El contador solo cuenta el servicio en curso
       const sala = await salaRepository.findById(condolencia.salaId);
-      if (sala.libroCondolencias.totalMensajes > 0) {
+      const servicio = await this.servicioActualDeSala(condolencia.salaId);
+      if (condolencia.servicio === servicio && sala.libroCondolencias.totalMensajes > 0) {
         sala.libroCondolencias.totalMensajes -= 1;
         await sala.save();
       }
@@ -212,7 +226,8 @@ class CondolenciaService {
    */
   async getStats(salaId) {
     try {
-      return await condolenciaRepository.getStatsBySala(salaId);
+      const servicio = await this.servicioActualDeSala(salaId);
+      return await condolenciaRepository.getStatsBySala(salaId, servicio);
     } catch (error) {
       throw new Error(`Error obteniendo estadísticas: ${error.message}`);
     }
