@@ -8,6 +8,7 @@ const { requireSuperAdmin, scopeFuneraria } = require('../../../middleware/auth'
 const router = express.Router();
 const funerariaController = require('../controllers/funerariaController');
 const { validate, validateObjectId, schemas } = require('../../../middleware/validation');
+const { upload, handleUploadError } = require('../../../middleware/upload');
 
 /**
  * @route   POST /api/funerarias
@@ -66,6 +67,34 @@ router.get('/:id/completa', scopeFuneraria, validateObjectId('id'), funerariaCon
  * @access  Private (superadmin o la funeraria dueña)
  */
 router.put('/:id', scopeFuneraria, validateObjectId('id'), validate(schemas.funerariaUpdate), funerariaController.update);
+
+/**
+ * @route   PUT /api/funerarias/:id/marca
+ * @desc    Logo y colores de la funeraria, aplicados a los pergaminos de sus salas
+ * @access  Private (superadmin o la funeraria dueña)
+ * @body    { logoUrl?, colorPrimario?, colorTexto?, colorFondo? }
+ */
+router.put(
+  '/:id/marca',
+  scopeFuneraria,
+  validateObjectId('id'),
+  validate(schemas.marcaFuneraria),
+  funerariaController.actualizarMarca
+);
+
+/**
+ * @route   POST /api/funerarias/:id/logo
+ * @desc    Subir el logo (campo multipart "archivo") y aplicarlo a sus pergaminos
+ * @access  Private (superadmin o la funeraria dueña)
+ */
+router.post(
+  '/:id/logo',
+  scopeFuneraria,
+  validateObjectId('id'),
+  upload.single('archivo'),
+  handleUploadError,
+  funerariaController.subirLogo
+);
 
 /**
  * @route   DELETE /api/funerarias/:id

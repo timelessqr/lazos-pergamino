@@ -181,6 +181,13 @@ class PergaminoRepository {
   }
 
   /**
+   * Aplicar campos a todos los pergaminos de una funeraria (logo, colores)
+   */
+  async updateByFuneraria(funerariaId, set) {
+    return await Pergamino.updateMany({ funerariaId }, { $set: set });
+  }
+
+  /**
    * Eliminar los pergaminos de una funeraria
    */
   async deleteByFuneraria(funerariaId) {

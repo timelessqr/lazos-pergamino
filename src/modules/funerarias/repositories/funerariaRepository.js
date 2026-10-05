@@ -144,6 +144,28 @@ class FunerariaRepository {
   }
 
   /**
+   * Actualizar campos sueltos con $set (rutas con punto, ej. 'branding.logoUrl'):
+   * a diferencia de update(), no reemplaza el subdocumento entero
+   */
+  async setCampos(funerariaId, set) {
+    if (!mongoose.isValidObjectId(funerariaId)) {
+      throw new Error('ID de funeraria inválido');
+    }
+
+    const funeraria = await Funeraria.findByIdAndUpdate(
+      funerariaId,
+      { $set: { ...set, ultimaActualizacion: new Date() } },
+      { new: true, runValidators: true }
+    );
+
+    if (!funeraria) {
+      throw new Error('Funeraria no encontrada');
+    }
+
+    return funeraria;
+  }
+
+  /**
    * Desactivar funeraria (soft delete)
    */
   async softDelete(funerariaId) {

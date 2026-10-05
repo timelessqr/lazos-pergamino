@@ -1,7 +1,9 @@
 // ===================================
 // src/modules/funerarias/services/funerariaService.js
 // ===================================
+const sharp = require('sharp');
 const funerariaRepository = require('../repositories/funerariaRepository');
+const { storageService } = require('../../../services/storage/storageService');
 const salaRepository = require('../../salas/repositories/salaRepository');
 const qrRepository = require('../../qr/repositories/qrRepository');
 const pergaminoRepository = require('../../pergaminos/repositories/pergaminoRepository');
@@ -93,6 +95,8 @@ class FunerariaService {
           },
           estilos: {
             colorPrimario: funeraria.branding?.colorPrimario || '#8C7B5A',
+            colorTexto: funeraria.branding?.colorTexto || '#4A443B',
+            colorFondo: funeraria.branding?.colorFondo || '#F4F1E8',
             tipografia: funeraria.branding?.tipografia || 'serif'
           }
         });
@@ -242,6 +246,67 @@ class FunerariaService {
       };
     } catch (error) {
       throw new Error(`Error actualizando funeraria: ${error.message}`);
+    }
+  }
+
+  /**
+   * Logo y colores de la funeraria. Se guardan en su branding y se aplican a
+   * los pergaminos de sus salas: el logo va al pie (y al sello de agua que
+   * dibuja el frontend) y los colores a estilos.
+   */
+  async actualizarMarca(funerariaId, marca) {
+    try {
+      const setFuneraria = {};
+      const setPergaminos = {};
+
+      if (marca.logoUrl !== undefined) {
+        setFuneraria['branding.logoUrl'] = marca.logoUrl;
+        setPergaminos['pie.logoUrl'] = marca.logoUrl;
+        setPergaminos['pie.mostrarLogo'] = true;
+      }
+
+      ['colorPrimario', 'colorTexto', 'colorFondo'].forEach(color => {
+        if (marca[color]) {
+          setFuneraria[`branding.${color}`] = marca[color];
+          setPergaminos[`estilos.${color}`] = marca[color];
+        }
+      });
+
+      const funeraria = await funerariaRepository.setCampos(funerariaId, setFuneraria);
+      const result = await pergaminoRepository.updateByFuneraria(funeraria._id, setPergaminos);
+
+      return {
+        funeraria: this.formatFuneraria(funeraria),
+        pergaminosActualizados: result.modifiedCount,
+        message: 'Logo y colores aplicados a los pergaminos de la funeraria'
+      };
+    } catch (error) {
+      throw new Error(`Error actualizando la marca: ${error.message}`);
+    }
+  }
+
+  /**
+   * Sube el logo de la funeraria y lo aplica a sus pergaminos
+   */
+  async subirLogo(funerariaId, file) {
+    try {
+      await funerariaRepository.findById(funerariaId);
+
+      // webp conserva la transparencia de los logos PNG
+      const buffer = await sharp(file.buffer)
+        .resize({ width: 800, height: 800, fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 90 })
+        .toBuffer();
+
+      const archivo = await storageService.upload(buffer, {
+        folder: `funerarias/${funerariaId}`,
+        originalName: 'logo.webp',
+        mimeType: 'image/webp'
+      });
+
+      return await this.actualizarMarca(funerariaId, { logoUrl: archivo.url });
+    } catch (error) {
+      throw new Error(`Error subiendo el logo: ${error.message}`);
     }
   }
 

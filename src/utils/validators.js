@@ -80,9 +80,19 @@ const schemas = {
       logoUrl: Joi.string().trim().optional().allow(''),
       colorPrimario: Joi.string().pattern(/^#[0-9A-Fa-f]{6}$/).optional().allow(''),
       colorSecundario: Joi.string().pattern(/^#[0-9A-Fa-f]{6}$/).optional().allow(''),
+      colorTexto: Joi.string().pattern(/^#[0-9A-Fa-f]{6}$/).optional().allow(''),
+      colorFondo: Joi.string().pattern(/^#[0-9A-Fa-f]{6}$/).optional().allow(''),
       tipografia: Joi.string().max(60).trim().optional().allow('')
     }).optional()
   }),
+
+  // Logo y colores de la funeraria: se aplican a los pergaminos de sus 4 salas
+  marcaFuneraria: Joi.object({
+    logoUrl: Joi.string().trim().optional().allow(''),
+    colorPrimario: Joi.string().pattern(/^#[0-9A-Fa-f]{6}$/).optional(),
+    colorTexto: Joi.string().pattern(/^#[0-9A-Fa-f]{6}$/).optional(),
+    colorFondo: Joi.string().pattern(/^#[0-9A-Fa-f]{6}$/).optional()
+  }).min(1),
 
   // ----- SALA -----
   salaUpdate: Joi.object({

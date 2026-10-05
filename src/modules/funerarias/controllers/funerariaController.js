@@ -145,6 +145,36 @@ class FunerariaController {
       responseHelper.error(res, error.message, 400);
     }
   }
+
+  /**
+   * PUT /api/funerarias/:id/marca
+   */
+  async actualizarMarca(req, res) {
+    try {
+      const result = await funerariaService.actualizarMarca(req.params.id, req.body);
+      responseHelper.success(res, result, result.message);
+    } catch (error) {
+      console.error('Error actualizando la marca:', error);
+      responseHelper.error(res, error.message, 400);
+    }
+  }
+
+  /**
+   * POST /api/funerarias/:id/logo
+   */
+  async subirLogo(req, res) {
+    try {
+      if (!req.file) {
+        return responseHelper.error(res, 'No se proporcionó archivo', 400);
+      }
+
+      const result = await funerariaService.subirLogo(req.params.id, req.file);
+      responseHelper.success(res, result, 'Logo subido y aplicado a los pergaminos', 201);
+    } catch (error) {
+      console.error('Error subiendo el logo:', error);
+      responseHelper.error(res, error.message, 400);
+    }
+  }
 }
 
 module.exports = new FunerariaController();

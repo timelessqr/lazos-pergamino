@@ -63,10 +63,13 @@ const funerariaSchema = new mongoose.Schema({
     trim: true
   },
 
-  // Personalizacion visual que heredan los pergaminos de sus salas
+  // Personalizacion visual que heredan los pergaminos de sus salas.
+  // Los colores por defecto son los del pergamino (dorado sobre papel crema)
   branding: {
     logoUrl: { type: String, trim: true },
-    colorPrimario: { type: String, trim: true, default: '#2C3E50' },
+    colorPrimario: { type: String, trim: true, default: '#8C7B5A' },
+    colorTexto: { type: String, trim: true, default: '#4A443B' },
+    colorFondo: { type: String, trim: true, default: '#F4F1E8' },
     colorSecundario: { type: String, trim: true, default: '#C9A227' },
     tipografia: { type: String, trim: true, default: 'serif' }
   },
