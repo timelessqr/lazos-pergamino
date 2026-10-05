@@ -7,6 +7,7 @@ const helmet = require('helmet');
 require('dotenv').config();
 
 const connectDB = require('./src/config/database');
+const { asegurarSuperadmins } = require('./src/config/superadmins');
 const { environment, validateEnvironment } = require('./src/config/environment');
 const { generalLimiter } = require('./src/middleware/rateLimiter');
 
@@ -19,9 +20,11 @@ const app = express();
 app.set('trust proxy', 1);
 
 // Conectar a la base de datos (sin crashear si falla en desarrollo)
-connectDB().catch(() => {
-  console.log('⚠️  Servidor iniciado sin BD. Conéctate después.');
-});
+connectDB()
+  .then(conn => conn && asegurarSuperadmins())
+  .catch((error) => {
+    console.log(`⚠️  Servidor iniciado sin BD o sin superadmins: ${error.message}`);
+  });
 
 // Seguridad
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));

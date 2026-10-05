@@ -36,6 +36,8 @@ El primer superadmin se registra a mano, una vez por base (`/api/usuarios` ya ex
 node registrar-superadmin.js <_id del usuario en core-qr>
 ```
 
+En un servidor sin consola (Render free) se usa la variable `SUPERADMIN_CORE_USER_IDS` con los ids separados por coma: el servidor los da de alta al arrancar.
+
 Detalle en [CLAUDE.md §5](CLAUDE.md).
 
 ## Probar el flujo
