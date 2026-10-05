@@ -28,10 +28,11 @@ const mediaSchema = new mongoose.Schema({
     required: true
   },
 
-  // Seccion del pergamino donde se muestra
+  // Seccion del pergamino donde se muestra. Las mismas que acepta
+  // schemas.mediaUpload; 'datos_difunto' queda por compatibilidad
   seccion: {
     type: String,
-    enum: ['galeria_fotos', 'datos_difunto', 'encabezado'],
+    enum: ['galeria_fotos', 'retrato', 'encabezado', 'pie_funeraria', 'datos_difunto'],
     default: 'galeria_fotos'
   },
 
