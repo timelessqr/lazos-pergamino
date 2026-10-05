@@ -198,41 +198,31 @@ usuariofunerarias ► funerarias ─┬──► salas ─┬──► qrs      
 
 ## 5. Autenticación y permisos
 
-> ⚠️ **NO HAY AUTENTICACIÓN. Todas las rutas están abiertas.** El mecanismo está pendiente de definir (se barajó una API key por usuario en cabecera). **No desplegar así a producción.**
+El login es el de **core-qr**: este backend no guarda contraseñas ni emite tokens. Verifica la firma del JWT de core-qr (mismo `JWT_SECRET`) y traduce su `userId` a rol + funeraria con `usuariofunerarias`.
 
-### Estado actual
+### Cómo está armado
 
-Ninguna ruta lleva guard. Cualquiera que alcance la API puede leer y modificar los datos de **cualquier** funeraria: crear y borrar funerarias, editar pergaminos, desactivar QR y moderar condolencias.
-
-### Lo que sigue en el repo, sin usar
-
-Se conservan para reconectarlos cuando se decida el mecanismo:
-
-| Archivo | Qué hacía |
+| Pieza | Qué hace |
 |---|---|
-| `src/middleware/auth.js` | Verificaba el JWT de core-qr y resolvía `req.user` desde `usuariofunerarias`. Incluye `requireRole`, `requireSuperAdmin`, `scopeFuneraria` |
-| `src/middleware/ownership.js` | `requireOwnership(tipo, param)`: resolvía de qué funeraria es un recurso identificado por su propio id (`/salas/:id`, `/pergaminos/:id`…) y comparaba |
-| `src/modules/usuarios/` | Gestión de accesos: qué usuario tiene qué rol y en qué funeraria |
-| `src/models/UsuarioFuneraria.js` | Mapeo `coreUserId → rol + funerariaId` |
+| `src/routes/index.js` | Monta las rutas públicas primero y después `router.use(authMiddleware)`: todo lo que sigue exige token |
+| `src/middleware/auth.js` | `authMiddleware` (token → `req.user`), `requireSuperAdmin`, `scopeFuneraria` |
+| `src/middleware/ownership.js` | `requireOwnership(tipo, param)`: averigua de qué funeraria es el recurso y compara |
+| `src/modules/usuarios/` | Alta y baja de accesos (solo superadmin) |
+| `registrar-superadmin.js` | Alta del primer superadmin, una vez por base |
 
-Ninguno se importa desde las rutas hoy. Los bloques `@access` dicen `Abierto (era: …)` para recordar qué protección tenía cada endpoint.
+Cada ruta privada lleva su guard de aislamiento, y su bloque `@access` dice cuál:
 
-### Al reconectar la autenticación
+- La funeraria viene **explícita** en la petición (`:funerariaId`, `:id` de funeraria) → `scopeFuneraria`
+- El recurso se identifica **por su propio id** (`/salas/:id`, `/pergaminos/:id`, `/qr/:id`, `/condolencias/:id`, `/media/:id`) → `requireOwnership('<tipo>', '<param>')`
+- Listados globales, alta/baja de funerarias, usuarios, admin y dashboard global → `requireSuperAdmin`
 
-Hacen falta **dos** cosas, no una:
+> Una ruta privada nueva sin guard de aislamiento deja a una funeraria leer y editar lo de otra: `authMiddleware` solo dice quién es, no qué puede tocar. Ver §11.
 
-1. **Autenticar** — identificar quién llama (API key, JWT, lo que se elija).
-2. **Aislar por funeraria** — que un usuario no toque los datos de otra. Aquí hay dos casos distintos:
-   - La funeraria viene **explícita** en la petición (`:funerariaId`, `:id` de funeraria, body, query) → `scopeFuneraria`
-   - El recurso se identifica **por su propio id** (`/salas/:id`, `/pergaminos/:id`, `/qr/:id`) → `requireOwnership('<tipo>', '<param>')`
-
-> Olvidar el segundo caso ya causó un fallo real: con solo `scopeFuneraria`, una funeraria podía leer **y editar** los pergaminos de otra, porque en `/pergaminos/:id` ese middleware no tiene nada que comparar. Ver §11.
-
-Los controllers ya no leen `req.user` ni `req.funerariaScope`: toman los ids de `req.params`. Al volver la auth habrá que reintroducir el scope y, si se quiere trazabilidad, los campos de auditoría (`creadoPor`, `editadoPor`, `subidoPor`, `moderadoPor`), que se retiraron de los modelos al no haber usuario que registrar.
+Los controllers no leen `req.user` ni `req.funerariaScope`: toman los ids de `req.params`, y el guard ya garantizó que son de la funeraria del usuario. Los campos de auditoría (`creadoPor`, `editadoPor`, `subidoPor`, `moderadoPor`) siguen fuera de los modelos.
 
 ### Rutas públicas por diseño
 
-`GET /api/pergamino/:code` y el libro de condolencias **deben seguir abiertos** aunque se añada autenticación: quien escanea el QR en el velatorio no tiene cuenta. Su protección son los rate limiters, el estado `publicado` del pergamino y el código de acceso opcional del libro.
+`GET /api/pergamino/:code` y el libro de condolencias **están abiertos por diseño**: quien escanea el QR en el velatorio no tiene cuenta. Su protección son los rate limiters, el estado `publicado` del pergamino y el código de acceso opcional del libro.
 
 ---
 
@@ -342,5 +332,4 @@ Los curl completos de todos los endpoints (CRUD, QR, condolencias, media, compro
 - **El pergamino se sobrescribe entre servicios**, por eso `condolencias` guarda `difuntoSnapshot`. No lo quites.
 - **Mongo corre en el puerto 27018**, no en el 27017, para no chocar con una instalación local.
 - **`totalMensajes` en la sala es un contador denormalizado.** Si añades una vía de crear o borrar condolencias, mantenlo sincronizado.
-- **Las rutas están abiertas hoy** (§5). Al reconectar la autenticación, no basta con autenticar: hace falta además el guard de aislamiento por funeraria.
-- **Toda ruta privada necesita un guard de aislamiento.** `scopeFuneraria` solo mira la funeraria pedida explícitamente: en `/salas/:id` o `/pergaminos/:id` no ve nada y deja pasar. Por eso existe `requireOwnership`. Hubo un fallo real por esto — una funeraria podía leer **y editar** los pergaminos de otra. Cuando vuelva la auth, comprueba el aislamiento con los curl de `TEST_ENDPOINTS.md`.
+- **Toda ruta privada necesita un guard de aislamiento.** `scopeFuneraria` solo mira la funeraria pedida explícitamente: en `/salas/:id` o `/pergaminos/:id` no ve nada y deja pasar. Por eso existe `requireOwnership`. Hubo un fallo real por esto — una funeraria podía leer **y editar** los pergaminos de otra. Al tocar rutas, comprueba el aislamiento con los curl de `TEST_ENDPOINTS.md`.

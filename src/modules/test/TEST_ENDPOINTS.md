@@ -132,13 +132,19 @@ curl -s http://localhost:3000/api/test/escanear/<CODIGO_QR> | jq
 
 Todo lo de abajo usa los endpoints **de producción**, no los de test.
 
-### Paso 1 — Sin token
+### Paso 1 — Token
 
-⚠️ **Las rutas están abiertas**: la autenticación está pendiente de definir. Ningún curl de esta guía necesita cabecera `Authorization`.
+Las rutas privadas piden el token de core-qr. En local se puede firmar uno con el `JWT_SECRET` del `.env` y darle superadmin a ese `userId`:
 
 ```bash
-curl -s http://localhost:3000/api/funerarias | jq
+USER_ID=aaaaaaaaaaaaaaaaaaaaaaaa
+node registrar-superadmin.js $USER_ID
+TOKEN=$(node -e "require('dotenv').config(); console.log(require('jsonwebtoken').sign({userId:'$USER_ID'}, process.env.JWT_SECRET, {expiresIn:'1h'}))")
+
+curl -s http://localhost:3000/api/funerarias -H "Authorization: Bearer $TOKEN" | jq
 ```
+
+Todos los curl privados de esta guía necesitan además `-H "Authorization: Bearer $TOKEN"`.
 
 ### Paso 2 — Crear funeraria (crea sus 4 salas, QR y pergaminos)
 ```bash
@@ -372,9 +378,7 @@ curl -s "http://localhost:3000/api/admin/search?q=Lazos" | jq
 
 ## Comprobaciones de seguridad
 
-⚠️ **No aplican hoy**: las rutas están abiertas, todo responde 200 sin credenciales.
-
-Cuando se reconecte la autenticación, hay que verificar:
+Hay que verificar:
 
 - Sin credenciales → 401
 - Credenciales de la funeraria B pidiendo recursos de A → 403, incluyendo `/salas/:id`, `/pergaminos/:id` y `/qr/:id`, que se identifican por su propio id y necesitan `requireOwnership`

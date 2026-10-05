@@ -23,17 +23,26 @@ npm run dev
 
 La API queda en `http://localhost:3000`. La documentación viva está en `GET /api`.
 
-## ⚠️ Autenticación
+## Autenticación
 
-**No hay. Todas las rutas están abiertas.** El mecanismo está pendiente de definir. **No desplegar así a producción.**
+El login lo hace **core-qr**. Este backend verifica su token (mismo `JWT_SECRET`) y traduce el `userId` a un rol y una funeraria con la colección `usuariofunerarias`.
 
-Los guards (`src/middleware/auth.js`, `src/middleware/ownership.js`) y el módulo `usuarios/` siguen en el repo sin usarse, listos para reconectar. Ver [CLAUDE.md §5](CLAUDE.md).
+- **Públicas:** `GET /api/pergamino/:code` y el libro de condolencias. Las usa quien escanea el QR, que no tiene cuenta.
+- **Privadas:** todo lo demás pide `Authorization: Bearer <token de core-qr>`. Un usuario de funeraria solo ve y edita lo de su funeraria; el superadmin ve todo.
+
+El primer superadmin se registra a mano, una vez por base (`/api/usuarios` ya exige ser superadmin):
+
+```bash
+node registrar-superadmin.js <_id del usuario en core-qr>
+```
+
+Detalle en [CLAUDE.md §5](CLAUDE.md).
 
 ## Probar el flujo
 
 ```bash
-# Sin token: las rutas están abiertas
-curl -s localhost:3000/api/funerarias | jq
+# Privada: sin token responde 401
+curl -s localhost:3000/api/funerarias -H "Authorization: Bearer $TOKEN" | jq
 
 # Escanear el QR de una sala
 curl -s localhost:3000/api/pergamino/<CODIGO_QR> | jq

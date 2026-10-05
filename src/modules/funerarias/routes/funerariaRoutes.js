@@ -1,10 +1,10 @@
 // ===================================
 // src/modules/funerarias/routes/funerariaRoutes.js
 // ===================================
-// ⚠️ RUTAS ABIERTAS: la autenticación está pendiente de definir.
-// Los middlewares auth / scopeFuneraria / requireOwnership siguen en
-// src/middleware/ por si se reconectan; hoy NO se aplican.
+// El token lo exige authMiddleware en src/routes/index.js. Aquí va el
+// aislamiento entre funerarias de cada ruta.
 const express = require('express');
+const { requireSuperAdmin, scopeFuneraria } = require('../../../middleware/auth');
 const router = express.Router();
 const funerariaController = require('../controllers/funerariaController');
 const { validate, validateObjectId, schemas } = require('../../../middleware/validation');
@@ -12,66 +12,66 @@ const { validate, validateObjectId, schemas } = require('../../../middleware/val
 /**
  * @route   POST /api/funerarias
  * @desc    Registrar funeraria (crea automáticamente sus 4 salas, QR y pergaminos)
- * @access  Abierto (era: Superadmin)
+ * @access  Superadmin
  */
-router.post('/', validate(schemas.funeraria), funerariaController.register);
+router.post('/', requireSuperAdmin, validate(schemas.funeraria), funerariaController.register);
 
 /**
  * @route   GET /api/funerarias
  * @desc    Listar funerarias
- * @access  Abierto (era: Superadmin)
+ * @access  Superadmin
  * @query   page, limit, search, sortBy, sortOrder
  */
-router.get('/', funerariaController.getAll);
+router.get('/', requireSuperAdmin, funerariaController.getAll);
 
 /**
  * @route   GET /api/funerarias/stats
  * @desc    Estadísticas de funerarias
- * @access  Abierto (era: Superadmin)
+ * @access  Superadmin
  */
-router.get('/stats', funerariaController.getStats);
+router.get('/stats', requireSuperAdmin, funerariaController.getStats);
 
 /**
  * @route   GET /api/funerarias/search
  * @desc    Buscar funerarias
- * @access  Abierto (era: Superadmin)
+ * @access  Superadmin
  * @query   q, limit
  */
-router.get('/search', funerariaController.search);
+router.get('/search', requireSuperAdmin, funerariaController.search);
 
 /**
  * @route   GET /api/funerarias/code/:codigo
  * @desc    Obtener funeraria por código (FUN-001)
- * @access  Abierto (era: Superadmin)
+ * @access  Superadmin
  */
-router.get('/code/:codigo', funerariaController.getByCode);
+router.get('/code/:codigo', requireSuperAdmin, funerariaController.getByCode);
 
 /**
  * @route   GET /api/funerarias/:id
  * @desc    Obtener funeraria por ID
- * @access  Abierto (era: Private) (Superadmin o dueño)
+ * @access  Private (superadmin o la funeraria dueña)
  */
-router.get('/:id', validateObjectId('id'), funerariaController.getById);
+router.get('/:id', scopeFuneraria, validateObjectId('id'), funerariaController.getById);
 
 /**
  * @route   GET /api/funerarias/:id/completa
  * @desc    Funeraria + sus 4 salas con QR y pergamino
- * @access  Abierto (era: Private) (Superadmin o dueño)
+ * @access  Private (superadmin o la funeraria dueña)
  */
-router.get('/:id/completa', validateObjectId('id'), funerariaController.getCompleta);
+router.get('/:id/completa', scopeFuneraria, validateObjectId('id'), funerariaController.getCompleta);
 
 /**
  * @route   PUT /api/funerarias/:id
  * @desc    Actualizar funeraria
- * @access  Abierto (era: Private) (Superadmin o dueño)
+ * @access  Private (superadmin o la funeraria dueña)
  */
-router.put('/:id', validateObjectId('id'), validate(schemas.funerariaUpdate), funerariaController.update);
+router.put('/:id', scopeFuneraria, validateObjectId('id'), validate(schemas.funerariaUpdate), funerariaController.update);
 
 /**
  * @route   DELETE /api/funerarias/:id
  * @desc    Desactivar funeraria (soft delete)
- * @access  Abierto (era: Superadmin)
+ * @access  Superadmin
  */
-router.delete('/:id', validateObjectId('id'), funerariaController.delete);
+router.delete('/:id', requireSuperAdmin, validateObjectId('id'), funerariaController.delete);
 
 module.exports = router;

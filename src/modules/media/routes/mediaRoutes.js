@@ -1,10 +1,10 @@
 // ===================================
 // src/modules/media/routes/mediaRoutes.js
 // ===================================
-// ⚠️ RUTAS ABIERTAS: la autenticación está pendiente de definir.
-// Los middlewares auth / scopeFuneraria / requireOwnership siguen en
-// src/middleware/ por si se reconectan; hoy NO se aplican.
+// El token lo exige authMiddleware en src/routes/index.js. Aquí va el
+// aislamiento entre funerarias de cada ruta.
 const express = require('express');
+const { requireOwnership } = require('../../../middleware/ownership');
 const router = express.Router();
 const mediaController = require('../controllers/mediaController');
 const storageController = require('../controllers/storageController');
@@ -14,17 +14,18 @@ const { validateObjectId } = require('../../../middleware/validation');
 /**
  * @route   GET /api/media/storage/info
  * @desc    Driver de almacenamiento en uso (local o R2)
- * @access  Abierto (era: Private)
+ * @access  Private (superadmin o la funeraria dueña)
  */
 router.get('/storage/info', storageController.getInfo);
 
 /**
  * @route   POST /api/media/upload/:salaId
  * @desc    Subir una foto para el pergamino de la sala
- * @access  Abierto (era: Private)
+ * @access  Private (superadmin o la funeraria dueña)
  */
 router.post(
   '/upload/:salaId',
+  requireOwnership('sala', 'salaId'),
   validateObjectId('salaId'),
   upload.single('archivo'),
   handleUploadError,
@@ -34,38 +35,38 @@ router.post(
 /**
  * @route   GET /api/media/sala/:salaId
  * @desc    Listar los archivos de una sala
- * @access  Abierto (era: Private)
+ * @access  Private (superadmin o la funeraria dueña)
  * @query   seccion
  */
-router.get('/sala/:salaId', validateObjectId('salaId'), mediaController.getBySala);
+router.get('/sala/:salaId', requireOwnership('sala', 'salaId'), validateObjectId('salaId'), mediaController.getBySala);
 
 /**
  * @route   GET /api/media/stats/:salaId
  * @desc    Uso de almacenamiento de la sala
- * @access  Abierto (era: Private)
+ * @access  Private (superadmin o la funeraria dueña)
  */
-router.get('/stats/:salaId', validateObjectId('salaId'), mediaController.getStats);
+router.get('/stats/:salaId', requireOwnership('sala', 'salaId'), validateObjectId('salaId'), mediaController.getStats);
 
 /**
  * @route   PUT /api/media/reorder/:salaId
  * @desc    Reordenar los archivos de la sala
- * @access  Abierto (era: Private)
+ * @access  Private (superadmin o la funeraria dueña)
  * @body    { orden: [mediaId, ...] }
  */
-router.put('/reorder/:salaId', validateObjectId('salaId'), mediaController.reorder);
+router.put('/reorder/:salaId', requireOwnership('sala', 'salaId'), validateObjectId('salaId'), mediaController.reorder);
 
 /**
  * @route   PUT /api/media/:id
  * @desc    Actualizar metadatos del archivo
- * @access  Abierto (era: Private)
+ * @access  Private (superadmin o la funeraria dueña)
  */
-router.put('/:id', validateObjectId('id'), mediaController.update);
+router.put('/:id', requireOwnership('media', 'id'), validateObjectId('id'), mediaController.update);
 
 /**
  * @route   DELETE /api/media/:id
  * @desc    Eliminar archivo
- * @access  Abierto (era: Private)
+ * @access  Private (superadmin o la funeraria dueña)
  */
-router.delete('/:id', validateObjectId('id'), mediaController.delete);
+router.delete('/:id', requireOwnership('media', 'id'), validateObjectId('id'), mediaController.delete);
 
 module.exports = router;

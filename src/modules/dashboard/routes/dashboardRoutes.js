@@ -1,10 +1,10 @@
 // ===================================
 // src/modules/dashboard/routes/dashboardRoutes.js
 // ===================================
-// ⚠️ RUTAS ABIERTAS: la autenticación está pendiente de definir.
-// Los middlewares auth / scopeFuneraria / requireOwnership siguen en
-// src/middleware/ por si se reconectan; hoy NO se aplican.
+// El token lo exige authMiddleware en src/routes/index.js. Aquí va el
+// aislamiento entre funerarias de cada ruta.
 const express = require('express');
+const { requireSuperAdmin, scopeFuneraria } = require('../../../middleware/auth');
 const router = express.Router();
 const dashboardController = require('../controllers/dashboardController');
 const { validateObjectId } = require('../../../middleware/validation');
@@ -12,24 +12,25 @@ const { validateObjectId } = require('../../../middleware/validation');
 /**
  * @route   GET /api/dashboard
  * @desc    Dashboard según el rol del usuario autenticado
- * @access  Abierto (era: Private)
+ * @access  Superadmin (devuelve el dashboard global)
  */
-router.get('/', dashboardController.get);
+router.get('/', requireSuperAdmin, dashboardController.get);
 
 /**
  * @route   GET /api/dashboard/global
  * @desc    Dashboard global de la plataforma
- * @access  Abierto (era: Superadmin)
+ * @access  Superadmin
  */
-router.get('/global', dashboardController.getGlobal);
+router.get('/global', requireSuperAdmin, dashboardController.getGlobal);
 
 /**
  * @route   GET /api/dashboard/funeraria/:funerariaId
  * @desc    Dashboard de una funeraria con sus 4 salas
- * @access  Abierto (era: Private)
+ * @access  Private (superadmin o la funeraria dueña)
  */
 router.get(
   '/funeraria/:funerariaId',
+  scopeFuneraria,
   validateObjectId('funerariaId'),
   dashboardController.getFuneraria
 );
