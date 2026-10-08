@@ -110,7 +110,9 @@ module.exports = {
     FUNERARIA_JWT_SECRET: process.env.FUNERARIA_JWT_SECRET,
     JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
     RATE_LIMIT_WINDOW: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000,
-    RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100
+    // Por IP cada 15 min, para toda la API. Una pantalla del panel hace varios
+    // pedidos (salas + 4 QR...): con 100 una funeraria trabajando chocaba el límite
+    RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 1000
   },
 
   // 🌐 URLs
