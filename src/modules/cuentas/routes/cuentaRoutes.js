@@ -76,6 +76,13 @@ cuentasRouter.put(
 );
 
 /**
+ * @route   DELETE /api/cuentas/:id
+ * @desc    Eliminar la cuenta (corta su sesión)
+ * @access  Superadmin
+ */
+cuentasRouter.delete('/:id', requireSuperAdmin, validateObjectId('id'), cuentaController.eliminar);
+
+/**
  * @route   POST /api/cuentas/:id/password
  * @access  Superadmin
  * @body    { password }

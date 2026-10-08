@@ -87,6 +87,18 @@ class CuentaController {
   }
 
   /**
+   * DELETE /api/cuentas/:id
+   */
+  async eliminar(req, res) {
+    try {
+      const result = await cuentaService.eliminar(req.params.id);
+      responseHelper.success(res, null, result.message);
+    } catch (error) {
+      responseHelper.error(res, error.message, 400);
+    }
+  }
+
+  /**
    * POST /api/cuentas/:id/password
    */
   async restablecerPassword(req, res) {

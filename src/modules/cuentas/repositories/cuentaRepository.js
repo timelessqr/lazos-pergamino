@@ -71,6 +71,18 @@ class CuentaRepository {
   }
 
   /**
+   * Eliminar una cuenta
+   */
+  async delete(cuentaId) {
+    const cuenta = await CuentaFuneraria.findByIdAndDelete(cuentaId);
+    if (!cuenta) {
+      throw new Error('Cuenta no encontrada');
+    }
+
+    return cuenta;
+  }
+
+  /**
    * Eliminar las cuentas de una funeraria
    */
   async deleteByFuneraria(funerariaId) {

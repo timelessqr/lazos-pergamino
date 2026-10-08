@@ -144,6 +144,14 @@ class CuentaService {
     return { message: 'Contraseña restablecida' };
   }
 
+  /**
+   * Eliminar una cuenta. Su token deja de servir porque la cuenta ya no existe.
+   */
+  async eliminar(cuentaId) {
+    await cuentaRepository.delete(cuentaId);
+    return { message: 'Cuenta eliminada' };
+  }
+
   formatCuenta(cuenta) {
     return {
       id: cuenta._id,
