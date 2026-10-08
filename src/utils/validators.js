@@ -94,6 +94,38 @@ const schemas = {
     colorFondo: Joi.string().pattern(/^#[0-9A-Fa-f]{6}$/).optional()
   }).min(1),
 
+  // ----- CUENTAS DE FUNERARIA -----
+  login: Joi.object({
+    email: email().lowercase().trim().required().messages({ 'any.required': 'El email es requerido' }),
+    password: Joi.string().max(100).required().messages({ 'any.required': 'La contraseña es requerida' })
+  }),
+
+  cambiarPassword: Joi.object({
+    actual: Joi.string().max(100).required(),
+    nueva: Joi.string().min(8).max(100).required().messages({
+      'string.min': 'La contraseña nueva debe tener al menos 8 caracteres'
+    })
+  }),
+
+  cuentaCrear: Joi.object({
+    nombre: Joi.string().min(2).max(100).trim().required(),
+    email: email().lowercase().trim().required(),
+    password: Joi.string().min(8).max(100).required().messages({
+      'string.min': 'La contraseña debe tener al menos 8 caracteres'
+    })
+  }),
+
+  cuentaActualizar: Joi.object({
+    nombre: Joi.string().min(2).max(100).trim().optional(),
+    isActive: Joi.boolean().optional()
+  }).min(1),
+
+  cuentaPassword: Joi.object({
+    password: Joi.string().min(8).max(100).required().messages({
+      'string.min': 'La contraseña debe tener al menos 8 caracteres'
+    })
+  }),
+
   // ----- SALA -----
   salaUpdate: Joi.object({
     nombre: Joi.string().min(1).max(80).trim().optional(),

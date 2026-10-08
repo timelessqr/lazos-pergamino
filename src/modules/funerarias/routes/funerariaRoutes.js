@@ -63,10 +63,10 @@ router.get('/:id/completa', scopeFuneraria, validateObjectId('id'), funerariaCon
 
 /**
  * @route   PUT /api/funerarias/:id
- * @desc    Actualizar funeraria
- * @access  Private (superadmin o la funeraria dueña)
+ * @desc    Actualizar funeraria (incluye activarla o desactivarla)
+ * @access  Superadmin
  */
-router.put('/:id', scopeFuneraria, validateObjectId('id'), validate(schemas.funerariaUpdate), funerariaController.update);
+router.put('/:id', requireSuperAdmin, validateObjectId('id'), validate(schemas.funerariaUpdate), funerariaController.update);
 
 /**
  * @route   PUT /api/funerarias/:id/marca

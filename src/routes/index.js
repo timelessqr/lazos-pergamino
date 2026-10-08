@@ -18,6 +18,12 @@ const { publicRouter: condolenciasPublicRouter } = require('../modules/condolenc
 const qrController = require('../modules/qr/controllers/qrController');
 const { publicLimiter } = require('../middleware/rateLimiter');
 const { authMiddleware } = require('../middleware/auth');
+const {
+  authPublicRouter,
+  authPrivateRouter,
+  funerariaCuentasRouter,
+  cuentasRouter
+} = require('../modules/cuentas/routes/cuentaRoutes');
 
 const router = express.Router();
 
@@ -161,6 +167,9 @@ router.get('/', (req, res) => {
 // ----- Rutas publicas (lo que abre el QR de la sala) -----
 // Van antes del authMiddleware: quien escanea el QR no tiene cuenta
 router.use('/pergamino', condolenciasPublicRouter);
+
+// Login de las cuentas de funeraria
+router.use('/auth', authPublicRouter);
 router.get('/pergamino/:code', publicLimiter, qrController.accederPergamino);
 
 // ----- Modulo de pruebas manuales (nunca en produccion) -----
@@ -173,10 +182,13 @@ if (process.env.NODE_ENV !== 'production') {
 // (scopeFuneraria / requireOwnership / requireSuperAdmin) va en cada ruta.
 router.use(authMiddleware);
 
+router.use('/auth', authPrivateRouter);
 router.use('/usuarios', usuarioRoutes);
 router.use('/admin', adminRoutes);
 router.use('/funerarias', funerariaRoutes);
 router.use('/funerarias/:funerariaId/salas', funerariaSalasRouter);
+router.use('/funerarias/:funerariaId/cuentas', funerariaCuentasRouter);
+router.use('/cuentas', cuentasRouter);
 router.use('/salas', salaRoutes);
 router.use('/pergaminos', pergaminoRoutes);
 router.use('/qr', qrRoutes);

@@ -1,14 +1,16 @@
 // ===================================
 // src/middleware/auth.js
 //
-// La autenticación la maneja core-qr: él emite el token tras el login.
-// Este backend NO emite tokens ni guarda contraseñas; solo:
-//   1. verifica la firma del JWT (mismo JWT_SECRET que core-qr)
-//   2. traduce el `userId` del token a rol + funerariaId mirando la
-//      colección local `usuariofunerarias`
+// Acepta dos clases de token:
+//   - El de core-qr (admin de Lazos): se verifica con JWT_SECRET y su `userId`
+//     se traduce a rol + funerariaId con la colección `usuariofunerarias`.
+//   - El de una cuenta de funeraria (tipo 'funeraria'): lo firma este backend
+//     al hacer login, con FUNERARIA_JWT_SECRET. Solo da acceso a su funeraria.
 // ===================================
 const jwt = require('jsonwebtoken');
 const UsuarioFuneraria = require('../models/UsuarioFuneraria');
+const CuentaFuneraria = require('../models/CuentaFuneraria');
+const Funeraria = require('../models/Funeraria');
 const { responseHelper } = require('../utils/responseHelper');
 const { SECURITY, MESSAGES, ROLES } = require('../utils/constants');
 
@@ -24,6 +26,11 @@ const authMiddleware = async (req, res, next) => {
     }
 
     const token = authHeader.replace('Bearer ', '');
+
+    // decode no valida nada: solo elige con qué secreto verificar
+    if (jwt.decode(token)?.tipo === 'funeraria') {
+      return await autenticarCuentaFuneraria(token, req, res, next);
+    }
 
     // core-qr firma { userId }; aceptamos tambien `sub` o `id` por si cambia
     const decoded = jwt.verify(token, SECURITY.JWT_SECRET);
@@ -48,6 +55,7 @@ const authMiddleware = async (req, res, next) => {
 
     req.user = {
       id: usuario._id,
+      tipo: 'core',
       coreUserId: usuario.coreUserId,
       nombre: usuario.nombre,
       email: usuario.email,
@@ -74,6 +82,39 @@ const authMiddleware = async (req, res, next) => {
     console.error('Error en middleware auth:', error);
     responseHelper.unauthorized(res, MESSAGES.ERROR.UNAUTHORIZED);
   }
+};
+
+/**
+ * Token de una cuenta de funeraria: firmado por este backend
+ */
+const autenticarCuentaFuneraria = async (token, req, res, next) => {
+  if (!SECURITY.FUNERARIA_JWT_SECRET) {
+    return responseHelper.unauthorized(res, 'El login de funerarias no está configurado');
+  }
+
+  const decoded = jwt.verify(token, SECURITY.FUNERARIA_JWT_SECRET);
+  const cuenta = await CuentaFuneraria.findById(decoded.sub);
+
+  // Contraseña cambiada o cuenta desactivada después de emitir el token
+  if (!cuenta || !cuenta.isActive || decoded.v !== cuenta.versionToken) {
+    return responseHelper.unauthorized(res, 'La sesión ya no es válida, vuelve a iniciar sesión');
+  }
+
+  const funeraria = await Funeraria.findById(cuenta.funerariaId).select('activo').lean();
+  if (!funeraria || funeraria.activo === false) {
+    return responseHelper.forbidden(res, 'La funeraria está desactivada');
+  }
+
+  req.user = {
+    id: cuenta._id,
+    tipo: 'cuenta',
+    nombre: cuenta.nombre,
+    email: cuenta.email,
+    rol: ROLES.FUNERARIA,
+    funerariaId: cuenta.funerariaId
+  };
+
+  next();
 };
 
 /**

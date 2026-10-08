@@ -3,6 +3,7 @@
 // ===================================
 const funerariaService = require('../services/funerariaService');
 const { responseHelper } = require('../../../utils/responseHelper');
+const { ROLES } = require('../../../utils/constants');
 
 class FunerariaController {
   /**
@@ -151,6 +152,12 @@ class FunerariaController {
    */
   async actualizarMarca(req, res) {
     try {
+      // Los colores los fija Lazos para todas; una funeraria solo maneja su logo
+      const tocaColores = ['colorPrimario', 'colorTexto', 'colorFondo'].some(c => req.body[c] !== undefined);
+      if (tocaColores && req.user?.rol !== ROLES.SUPERADMIN) {
+        return responseHelper.forbidden(res, 'Los colores del pergamino los define Lazos de Vida');
+      }
+
       const result = await funerariaService.actualizarMarca(req.params.id, req.body);
       responseHelper.success(res, result, result.message);
     } catch (error) {

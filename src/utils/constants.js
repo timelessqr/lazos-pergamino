@@ -105,6 +105,9 @@ module.exports = {
   SECURITY: {
     BCRYPT_ROUNDS: parseInt(process.env.BCRYPT_ROUNDS) || 12,
     JWT_SECRET: process.env.JWT_SECRET,
+    // Firma los tokens de las cuentas de funeraria. Distinto del de core-qr:
+    // core-qr no acepta esos tokens
+    FUNERARIA_JWT_SECRET: process.env.FUNERARIA_JWT_SECRET,
     JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
     RATE_LIMIT_WINDOW: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000,
     RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100
