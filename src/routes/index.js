@@ -168,6 +168,9 @@ router.get('/', (req, res) => {
 // Van antes del authMiddleware: quien escanea el QR no tiene cuenta
 router.use('/pergamino', condolenciasPublicRouter);
 
+// Imágenes del bucket con CORS, para armar el PDF del pergamino en el navegador
+router.use('/archivo', require('../modules/media/routes/archivoRoutes'));
+
 // Login de las cuentas de funeraria
 router.use('/auth', authPublicRouter);
 router.get('/pergamino/:code', publicLimiter, qrController.accederPergamino);
