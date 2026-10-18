@@ -8,6 +8,8 @@ const salaRepository = require('../../salas/repositories/salaRepository');
 const qrRepository = require('../../qr/repositories/qrRepository');
 const pergaminoRepository = require('../../pergaminos/repositories/pergaminoRepository');
 const condolenciaRepository = require('../../condolencias/repositories/condolenciaRepository');
+const mediaRepository = require('../../media/repositories/mediaRepository');
+const cuentaRepository = require('../../cuentas/repositories/cuentaRepository');
 const usuarioRepository = require('../../usuarios/repositories/usuarioRepository');
 const { validateFunerariaData } = require('../../../utils/validators');
 const { codeGenerator } = require('../../../utils/codeGenerator');
@@ -215,8 +217,10 @@ class FunerariaService {
           codigo: funeraria.codigo,
           nombre: funeraria.nombre,
           telefono: funeraria.telefono,
-          email: funeraria.email || 'No registrado',
-          ciudad: funeraria.ciudad || 'No registrada',
+          // Vacíos como vacíos: el texto lo decide la pantalla (y así el
+          // formulario de edición no recibe 'No registrado' como email)
+          email: funeraria.email || '',
+          ciudad: funeraria.ciudad || '',
           totalSalas: funeraria.totalSalas,
           activo: funeraria.activo,
           fechaRegistro: funeraria.fechaRegistro
@@ -315,7 +319,16 @@ class FunerariaService {
    */
   async deleteFuneraria(funerariaId) {
     try {
-      await funerariaRepository.softDelete(funerariaId);
+      // Borrado completo, como los clientes de core-qr: la funeraria, sus 4
+      // salas, QR, pergaminos, mensajes del libro, fotos registradas y cuentas.
+      // Los QR impresos de esas salas dejan de funcionar.
+      await funerariaRepository.findById(funerariaId);
+      await Promise.all([
+        this.limpiarRecursos(funerariaId),
+        mediaRepository.deleteByFuneraria(funerariaId),
+        cuentaRepository.deleteByFuneraria(funerariaId)
+      ]);
+      await funerariaRepository.deleteById(funerariaId);
       return { message: MESSAGES.SUCCESS.FUNERARIA_DELETED };
     } catch (error) {
       throw new Error(`Error eliminando funeraria: ${error.message}`);

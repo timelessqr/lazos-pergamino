@@ -98,9 +98,10 @@ router.post(
 
 /**
  * @route   DELETE /api/funerarias/:id
- * @desc    Desactivar funeraria (soft delete)
+ * @desc    Eliminar la funeraria por completo (salas, QR, pergaminos, libro, cuentas)
  * @access  Superadmin
  */
+// Borra todo lo de la funeraria (salas, QR, pergaminos, libro, cuentas)
 router.delete('/:id', requireSuperAdmin, validateObjectId('id'), funerariaController.delete);
 
 module.exports = router;

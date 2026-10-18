@@ -168,6 +168,10 @@ class FunerariaRepository {
   /**
    * Desactivar funeraria (soft delete)
    */
+  async deleteById(funerariaId) {
+    return await Funeraria.findByIdAndDelete(funerariaId);
+  }
+
   async softDelete(funerariaId) {
     return await this.update(funerariaId, { activo: false });
   }
