@@ -85,8 +85,13 @@ class PergaminoRepository {
   async update(pergaminoId, updateData) {
     const pergamino = await this.findById(pergaminoId);
 
+    // El editor solo manda pie.texto: se mezcla para no perder el logo de la funeraria
+    const pieAnterior = pergamino.toObject().pie || {};
+
     Object.keys(updateData).forEach(campo => {
-      pergamino[campo] = updateData[campo];
+      pergamino[campo] = campo === 'pie'
+        ? { ...pieAnterior, ...updateData.pie }
+        : updateData[campo];
     });
 
     return await pergamino.save();
